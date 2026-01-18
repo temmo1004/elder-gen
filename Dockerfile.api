@@ -20,12 +20,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 複製應用程式
 COPY . .
 
-# 複製並設定啟動腳本
-COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-
 # 暴露端口 (Zeabur 會使用 $PORT 環境變數)
 EXPOSE 8000
 
-# 啟動指令
-CMD ["/usr/local/bin/docker-entrypoint.sh"]
+# 啟動指令 - 直接輸出診斷訊息
+CMD python -c "import sys; print('Python:', sys.version, file=sys.stderr); from app.config import settings; print('Config OK', file=sys.stderr)" && uvicorn app.main:app --host 0.0.0.0 --port 8000
