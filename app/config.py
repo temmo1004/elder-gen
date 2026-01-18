@@ -2,9 +2,8 @@
 Configuration Management with Pydantic Settings
 環境變數設定 - 使用 pydantic-settings 進行型別安全的管理
 """
-import sys
+from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import ValidationError
 
 
 class Settings(BaseSettings):
@@ -18,30 +17,30 @@ class Settings(BaseSettings):
     )
 
     # ============= LINE Bot =============
-    LINE_CHANNEL_ACCESS_TOKEN: str
-    LINE_CHANNEL_SECRET: str
+    LINE_CHANNEL_ACCESS_TOKEN: Optional[str] = None
+    LINE_CHANNEL_SECRET: Optional[str] = None
 
     # ============= Database (Supabase Transaction Mode) =============
-    DATABASE_URL: str
+    DATABASE_URL: Optional[str] = None
 
     # ============= Redis (Zeabur Internal) =============
     REDIS_URL: str = "redis://localhost:6379/0"
 
     # ============= Supabase API =============
-    SUPABASE_URL: str
-    SUPABASE_KEY: str  # Service Role Key (for backend operations)
+    SUPABASE_URL: Optional[str] = None
+    SUPABASE_KEY: Optional[str] = None  # Service Role Key (for backend operations)
     SUPABASE_STORAGE_BUCKET: str = "elder-images"
 
     # ============= NewebPay (藍新金流) =============
-    NEWEBPAY_MERCHANT_ID: str
-    NEWEBPAY_HASH_KEY: str
-    NEWEBPAY_HASH_IV: str
-    NEWEBPAY_RETURN_URL: str
-    NEWEBPAY_NOTIFY_URL: str
-    NEWEBPAY_CLIENT_BACK_URL: str  # 用戶付款完成後返回的前端 URL
+    NEWEBPAY_MERCHANT_ID: Optional[str] = None
+    NEWEBPAY_HASH_KEY: Optional[str] = None
+    NEWEBPAY_HASH_IV: Optional[str] = None
+    NEWEBPAY_RETURN_URL: Optional[str] = None
+    NEWEBPAY_NOTIFY_URL: Optional[str] = None
+    NEWEBPAY_CLIENT_BACK_URL: Optional[str] = None  # 用戶付款完成後返回的前端 URL
 
     # ============= Banana Pro AI =============
-    BANANA_API_KEY: str
+    BANANA_API_KEY: Optional[str] = None
     BANANA_MODEL_KEY: str = ""
 
     # ============= App Settings =============
@@ -65,13 +64,17 @@ class Settings(BaseSettings):
         if not self.CELERY_RESULT_BACKEND:
             self.CELERY_RESULT_BACKEND = self.REDIS_URL
 
+    def is_configured(self) -> bool:
+        """檢查必要的環境變數是否已設定"""
+        required = [
+            self.LINE_CHANNEL_ACCESS_TOKEN,
+            self.LINE_CHANNEL_SECRET,
+            self.DATABASE_URL,
+            self.SUPABASE_URL,
+            self.SUPABASE_KEY,
+            self.BANANA_API_KEY,
+        ]
+        return all(required)
 
-try:
-    settings = Settings()
-except ValidationError as e:
-    print("❌ 環境變數設定錯誤：")
-    for error in e.errors():
-        loc = " -> ".join(str(x) for x in error["loc"])
-        print(f"   缺少必填變數: {loc}")
-    print("\n請在 Zeabur 環境變數中設定這些值")
-    sys.exit(1)
+
+settings = Settings()

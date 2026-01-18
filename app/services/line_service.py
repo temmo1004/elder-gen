@@ -11,8 +11,8 @@ from linebot.models import (
     MessageEvent, TextMessage, ImageMessage,
     TextSendMessage, ImageSendMessage,
     QuickReply, QuickReplyButton, MessageAction,
-    FlexSendMessage, BubbleContainer, ImageContainer, BoxComponent,
-    TextComponent, ButtonComponent, SpacerComponent, URIAction
+    FlexSendMessage, BubbleContainer, ImageComponent, BoxComponent,
+    TextComponent, ButtonComponent, SeparatorComponent, URIAction
 )
 from app.config import settings
 
@@ -21,14 +21,34 @@ class LineService:
     """LINE Bot 服務"""
 
     def __init__(self):
-        self.api = LineBotApi(settings.LINE_CHANNEL_ACCESS_TOKEN)
-        self.handler = WebhookHandler(settings.LINE_CHANNEL_SECRET)
-        self.channel_secret = settings.LINE_CHANNEL_SECRET
+        self._api = None
+        self._handler = None
+        self.channel_secret = settings.LINE_CHANNEL_SECRET or ""
+        self._initialized = False
+
+    def _ensure_initialized(self):
+        """延遲初始化，直到環境變數設定完成"""
+        if not self._initialized and settings.LINE_CHANNEL_ACCESS_TOKEN:
+            self._api = LineBotApi(settings.LINE_CHANNEL_ACCESS_TOKEN)
+            self._handler = WebhookHandler(settings.LINE_CHANNEL_SECRET)
+            self._initialized = True
+
+    @property
+    def api(self):
+        self._ensure_initialized()
+        return self._api
+
+    @property
+    def handler(self):
+        self._ensure_initialized()
+        return self._handler
 
     def verify_signature(self, body: bytes, signature: str) -> bool:
         """
         驗證 LINE Webhook Signature
         """
+        if not self.channel_secret:
+            return False
         hash_value = hashlib.sha256(self.channel_secret.encode("utf-8") + body).digest()
         calculated_signature = base64.b64encode(hash_value).decode()
 

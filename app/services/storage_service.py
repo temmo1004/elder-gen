@@ -13,14 +13,29 @@ class StorageService:
     """Supabase Storage 服務"""
 
     def __init__(self):
-        self.client: Client = create_client(
-            settings.SUPABASE_URL,
-            settings.SUPABASE_KEY
-        )
+        self._client = None
         self.bucket_name = settings.SUPABASE_STORAGE_BUCKET
+        self._initialized = False
+
+    def _ensure_initialized(self):
+        """延遲初始化"""
+        if not self._initialized and settings.SUPABASE_URL and settings.SUPABASE_KEY:
+            self._client = create_client(
+                settings.SUPABASE_URL,
+                settings.SUPABASE_KEY
+            )
+            self._initialized = True
+
+    @property
+    def client(self) -> Client:
+        self._ensure_initialized()
+        return self._client
 
     async def ensure_bucket_exists(self) -> bool:
         """確保 Bucket 存在"""
+        if not self._initialized:
+            print("⚠️  Supabase 未設定，跳過 Bucket 檢查")
+            return False
         try:
             # 檢查 Bucket 是否存在
             buckets = self.client.storage.list_buckets()

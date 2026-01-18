@@ -27,13 +27,24 @@ async def lifespan(app: FastAPI):
     print(f"🚀 {settings.APP_NAME} 啟動中...")
     print(f"📦 環境: {settings.ENVIRONMENT}")
 
-    # 確保資料表存在
-    init_db()
-    print("✅ 資料庫初始化完成")
+    # 檢查是否已設定環境變數
+    if not settings.is_configured():
+        print("⚠️  警告: 環境變數未完全設定，部分功能將無法使用")
+        print("⚠️  請在 Zeabur 設定以下環境變數:")
+        print("   - LINE_CHANNEL_ACCESS_TOKEN")
+        print("   - LINE_CHANNEL_SECRET")
+        print("   - DATABASE_URL")
+        print("   - SUPABASE_URL")
+        print("   - SUPABASE_KEY")
+        print("   - BANANA_API_KEY")
+    else:
+        # 確保資料表存在
+        init_db()
+        print("✅ 資料庫初始化完成")
 
-    # 確保 Storage Bucket 存在
-    await storage_service.ensure_bucket_exists()
-    print("✅ Storage Bucket 準備完成")
+        # 確保 Storage Bucket 存在
+        await storage_service.ensure_bucket_exists()
+        print("✅ Storage Bucket 準備完成")
 
     yield
 

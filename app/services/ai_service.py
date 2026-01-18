@@ -11,9 +11,13 @@ class BananaProService:
     """Banana Pro AI 服務"""
 
     def __init__(self):
-        self.api_key = settings.BANANA_API_KEY
-        self.model_key = settings.BANANA_MODEL_KEY
+        self.api_key = settings.BANANA_API_KEY or ""
+        self.model_key = settings.BANANA_MODEL_KEY or ""
         self.base_url = "https://api.banana.dev"
+
+    def _is_configured(self) -> bool:
+        """檢查是否已設定"""
+        return bool(self.api_key)
 
     async def generate_image(
         self,

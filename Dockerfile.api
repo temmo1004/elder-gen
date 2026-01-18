@@ -24,4 +24,4 @@ COPY . .
 EXPOSE 8000
 
 # 啟動指令 - 使用 shell form
-CMD sh -c 'echo "=== Container Starting ===" && python --version && echo "=== Loading config ===" && python -c "from app.config import settings; print(\"Config OK\")" && echo "=== Starting uvicorn ===" && uvicorn app.main:app --host 0.0.0.0 --port 8000'
+CMD sh -c 'echo "=== ElderGen Starting ===" && python --version && echo "=== Testing imports ===" && python -c "from app.config import settings; print(\"Config loaded\")" 2>&1 || echo "Config failed (missing env vars)" && echo "=== Starting Uvicorn ===" && exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}'

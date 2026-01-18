@@ -16,9 +16,13 @@ class NewebPayService:
     """藍新金流服務"""
 
     def __init__(self):
-        self.key = settings.NEWEBPAY_HASH_KEY.encode("utf-8")
-        self.iv = settings.NEWEBPAY_HASH_IV.encode("utf-8")
-        self.merchant_id = settings.NEWEBPAY_MERCHANT_ID
+        self.key = (settings.NEWEBPAY_HASH_KEY or "").encode("utf-8")
+        self.iv = (settings.NEWEBPAY_HASH_IV or "").encode("utf-8")
+        self.merchant_id = settings.NEWEBPAY_MERCHANT_ID or ""
+
+    def _is_configured(self) -> bool:
+        """檢查是否已設定"""
+        return bool(self.key and self.iv and self.merchant_id)
 
     def _encrypt(self, data_dict: dict) -> str:
         """
@@ -65,7 +69,9 @@ class NewebPayService:
         """
         # 藍新金流的 Checkbox 規則
         # HashKey + TradeInfo + HashIV → SHA256 → 轉大寫
-        raw = f"{settings.NEWEBPAY_HASH_KEY}{trade_info}{settings.NEWEBPAY_HASH_IV}"
+        hash_key = settings.NEWEBPAY_HASH_KEY or ""
+        hash_iv = settings.NEWEBPAY_HASH_IV or ""
+        raw = f"{hash_key}{trade_info}{hash_iv}"
         return hashlib.sha256(raw.encode("utf-8")).hexdigest().upper()
 
     def create_payment_data(
