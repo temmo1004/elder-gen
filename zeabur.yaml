@@ -1,4 +1,11 @@
 # ElderGen - Zeabur 部署配置
-# 指定使用 Dockerfile.api 進行部署
-DOCKERFILE_PATH: Dockerfile.api
+# 告訴 Zeabur 使用 Dockerfile 而不是自動偵測
+
+# 忽略 zbpack 自動偵測，強制使用 Dockerfile
+ZBPACK_IGNORED: true
+
+# 指定 Dockerfile 路徑
+DOCKERFILE_PATH: Dockerfile
+
+# 容器端口
 PORT: 8000
