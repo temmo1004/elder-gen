@@ -1,9 +1,4 @@
 # ElderGen - Zeabur 部署配置
-
-services:
-  # API 服務
-  - type: prebuilt
-    name: elder-gen-api
-    dockerfile: Dockerfile.api
-    env:
-      - PORT=8000
+# 指定使用 Dockerfile.api 進行部署
+DOCKERFILE_PATH: Dockerfile.api
+PORT: 8000
