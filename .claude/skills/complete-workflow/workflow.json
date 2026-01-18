@@ -1,0 +1,26 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2026-01-18",
+  "workflows": [],
+  "statistics": {
+    "total_workflows": 0,
+    "passed_reviews": 0,
+    "simplified_count": 0,
+    "knowledge_entries": 0,
+    "commits_made": 0
+  },
+  "standards": {
+    "review": {
+      "min_score": 7,
+      "max_high_issues": 0,
+      "max_medium_issues": 2,
+      "max_low_issues": 5
+    },
+    "simplify": {
+      "max_duplication_rate": 0.05,
+      "max_function_length": 50,
+      "max_nesting_depth": 4
+    }
+  },
+  "commits": []
+}

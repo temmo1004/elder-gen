@@ -1,0 +1,52 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2026-01-18",
+  "bugs": [
+    {
+      "id": "BUG-001",
+      "title": "Supabase 硬編碼憑證修復",
+      "severity": "P1",
+      "type": "security",
+      "platform": "frontend",
+      "created_at": "2026-01-18",
+      "summary": "修復 image-hosting-zeabur 專案中將 Supabase URL 和 JWT token 硬編碼在源碼中的安全問題",
+      "description": {
+        "error_message": "Hardcoded credentials detected in source code",
+        "scenario": "檢查未推送 commits 時發現 r2.js 和 supabase.js 中包含硬編碼的 Supabase URL 和 anon key",
+        "impact_scope": "image-hosting-zeabur 專案，可能被他人濫用憑證存取資源"
+      },
+      "root_cause": {
+        "technical": "開發過程中為了方便測試，將敏感資訊作為 fallback 預設值寫在源碼中",
+        "design": "缺少環境變數驗證機制",
+        "human": "未意識到硬編碼憑證的安全風險"
+      },
+      "solution": {
+        "modified_files": [
+          "WEB URL/image-hosting-zeabur/src/lib/supabase.js",
+          "WEB URL/image-hosting-zeabur/src/lib/r2.js"
+        ],
+        "changes": [
+          "移除 || 運算子的 fallback 預設值",
+          "新增環境變數缺失時的 throw Error 檢查",
+          "確保必須從環境變數讀取敏感資訊"
+        ],
+        "code_snippet": "const supabaseUrl = import.meta.env.VITE_SUPABASE_URL\nif (!supabaseUrl || !supabaseAnonKey) {\n  throw new Error('Missing required Supabase environment variables...')\n}"
+      },
+      "prevention": {
+        "code_review": "審查 PR 時檢查是否有硬編碼的 URL、token、密鑰等敏感資訊",
+        "automation": "可使用 git-secrets 或类似工具預防敏感資訊提交",
+        "documentation": "在 README 中明確說明必要的環境變數"
+      },
+      "related_resources": {
+        "commits": ["eee4331"],
+        "files_affected": ["supabase.js", "r2.js"]
+      }
+    }
+  ],
+  "statistics": {
+    "total_bugs": 1,
+    "by_severity": { "P0": 0, "P1": 1, "P2": 0, "P3": 0 },
+    "by_type": { "security": 1, "logic": 0, "performance": 0, "compatibility": 0, "deployment": 0 },
+    "by_platform": { "frontend": 1, "backend": 0, "database": 0, "devops": 0 }
+  }
+}
