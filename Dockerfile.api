@@ -23,5 +23,5 @@ COPY . .
 # 暴露端口 (Zeabur 會使用 $PORT 環境變數)
 EXPOSE 8000
 
-# 啟動指令
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "$PORT"]
+# 啟動指令 (使用 shell form 以支援 $PORT 變數展開)
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
