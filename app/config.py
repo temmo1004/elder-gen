@@ -2,7 +2,9 @@
 Configuration Management with Pydantic Settings
 環境變數設定 - 使用 pydantic-settings 進行型別安全的管理
 """
+import sys
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import ValidationError
 
 
 class Settings(BaseSettings):
@@ -64,4 +66,12 @@ class Settings(BaseSettings):
             self.CELERY_RESULT_BACKEND = self.REDIS_URL
 
 
-settings = Settings()
+try:
+    settings = Settings()
+except ValidationError as e:
+    print("❌ 環境變數設定錯誤：")
+    for error in e.errors():
+        loc = " -> ".join(str(x) for x in error["loc"])
+        print(f"   缺少必填變數: {loc}")
+    print("\n請在 Zeabur 環境變數中設定這些值")
+    sys.exit(1)
