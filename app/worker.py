@@ -37,11 +37,7 @@ celery_app.conf.update(
 
 def get_db():
     """取得資料庫 Session"""
-    db = SessionLocal()
-    try:
-        return db
-    finally:
-        pass
+    return SessionLocal()
 
 
 @celery_app.task(name="tasks.process_elder_image", bind=True, max_retries=3)
@@ -55,6 +51,9 @@ def process_elder_image(self, job_id: str, user_line_id: int, prompt: str, origi
         prompt: 文字提示
         original_url: 原圖 URL（可選）
     """
+    import asyncio
+    import httpx
+
     db = get_db()
     job = None
 
@@ -71,36 +70,39 @@ def process_elder_image(self, job_id: str, user_line_id: int, prompt: str, origi
         job.status = "PROCESSING"
         db.commit()
 
-        # 3. 呼叫 AI 生成圖片
-        ai_result = await ai_service.generate_from_url(
-            image_url=original_url,
-            prompt=prompt
-        )
+        # 3. 呼叫 AI 生成圖片 (使用 asyncio.run 包裹異步函數)
+        async def _process_image():
+            ai_result = await ai_service.generate_from_url(
+                image_url=original_url,
+                prompt=prompt
+            )
 
-        if not ai_result["success"]:
-            raise Exception(f"AI 生成失敗: {ai_result.get('error')}")
+            if not ai_result["success"]:
+                raise Exception(f"AI 生成失敗: {ai_result.get('error')}")
 
-        # 4. 取得生成的圖片資料
-        image_bytes = ai_result.get("image_bytes")
-        result_url = ai_result.get("image_url")
+            # 4. 取得生成的圖片資料
+            image_bytes = ai_result.get("image_bytes")
+            result_url = ai_result.get("image_url")
 
-        # 如果回傳的是 URL，需要下載後上傳到 Supabase
-        if result_url and not image_bytes:
-            import httpx
-            async with httpx.AsyncClient() as client:
-                response = await client.get(result_url)
-                image_bytes = response.content
+            # 如果回傳的是 URL，需要下載
+            if result_url and not image_bytes:
+                async with httpx.AsyncClient() as client:
+                    response = await client.get(result_url)
+                    image_bytes = response.content
 
-        # 5. 上傳到 Supabase Storage
-        upload_result = await storage_service.upload_image(
-            image_data=image_bytes,
-            user_id=user_line_id,
-            prefix="result"
-        )
+            # 5. 上傳到 UDA LINK Storage
+            upload_result = await storage_service.upload_image(
+                image_data=image_bytes,
+                user_id=user_line_id,
+                prefix="result"
+            )
 
-        if not upload_result["success"]:
-            raise Exception(f"上傳失敗: {upload_result.get('error')}")
+            if not upload_result["success"]:
+                raise Exception(f"上傳失敗: {upload_result.get('error')}")
 
+            return upload_result
+
+        upload_result = asyncio.run(_process_image())
         final_url = upload_result["full_url"]
 
         # 6. 更新任務狀態為 COMPLETED
@@ -186,7 +188,7 @@ def send_notification(user_line_id: str, message: str):
 
 
 # 啟動時建立資料表（如果不存在）
-@app.on_after_configure.connect
+@celery_app.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
     """設定定時任務"""
     # 可以在這裡加入定時清理任務等

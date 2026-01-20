@@ -17,6 +17,7 @@ from app.config import settings
 from app.database import engine, get_db, init_db
 from app import models, schemas
 from app.services import line_service, storage_service, payment_service
+from app.utils import get_or_create_user_in_db
 
 
 # ============= Lifespan Events =============
@@ -41,10 +42,6 @@ async def lifespan(app: FastAPI):
         # 確保資料表存在
         init_db()
         print("✅ 資料庫初始化完成")
-
-        # 確保 Storage Bucket 存在
-        await storage_service.ensure_bucket_exists()
-        print("✅ Storage Bucket 準備完成")
 
     yield
 
@@ -89,7 +86,7 @@ async def line_webhook(request: Request, background_tasks: BackgroundTasks):
 
     # 解析事件
     from app.api.line_handler import handle_line_events
-    background_tasks.add_task(handle_line_events, body.decode("utf-8"))
+    background_tasks.add_task(handle_line_events, body.decode("utf-8"), signature)
 
     return {"status": "ok"}
 
@@ -181,27 +178,11 @@ async def get_user(line_user_id: str, db: Session = Depends(get_db)):
 @app.post("/api/user", response_model=schemas.UserResponse)
 async def create_or_get_user(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
     """建立或取得用戶"""
-    user = db.query(models.ElderUser).filter(
-        models.ElderUser.line_user_id == user_data.line_user_id
-    ).first()
-
-    if user:
-        # 更新顯示名稱
-        user.display_name = user_data.display_name
-        user.picture_url = user_data.picture_url
-    else:
-        # 建立新用戶
-        user = models.ElderUser(
-            line_user_id=user_data.line_user_id,
-            display_name=user_data.display_name,
-            picture_url=user_data.picture_url,
-            points=settings.FREE_INITIAL_POINTS,  # 新用戶免費點數
-        )
-        db.add(user)
-
-    db.commit()
-    db.refresh(user)
-    return user
+    profile = {
+        "display_name": user_data.display_name,
+        "picture_url": user_data.picture_url
+    }
+    return get_or_create_user_in_db(db, user_data.line_user_id, profile)
 
 
 @app.get("/api/jobs/{job_id}", response_model=schemas.ImageJobResponse)

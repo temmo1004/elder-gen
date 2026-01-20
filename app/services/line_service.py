@@ -119,13 +119,12 @@ class LineService:
                 layout="vertical",
                 contents=[
                     TextComponent(text="長輩圖販賣機", weight="bold", size="xl"),
-                    SpacerComponent(size="sm"),
                     TextComponent(
                         text="選擇您要的功能",
                         size="md",
-                        color="#666666"
+                        color="#666666",
+                        margin="md"
                     ),
-                    SpacerComponent(size="sm"),
                     BoxComponent(
                         layout="vertical",
                         spacing="sm",

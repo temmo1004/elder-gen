@@ -16,14 +16,16 @@ from app.database import SessionLocal
 from app import models
 from app.services import line_service
 from app.worker import process_elder_image
+from app.utils import get_or_create_user_in_db
 
 
-def handle_line_events(body: str):
+def handle_line_events(body: str, signature: str):
     """
     處理 LINE Webhook 事件
 
     Args:
         body: 請求 body (JSON string)
+        signature: LINE 簽章 (X-Line-Signature header)
     """
     from linebot import WebhookHandler
     from app.config import settings
@@ -37,15 +39,13 @@ def handle_line_events(body: str):
     handler.add(FollowEvent, handle_follow)
     handler.add(UnfollowEvent, handle_unfollow)
 
-    # 解析並處理事件
-    events = json.loads(body)["events"]
-    for event in events:
-        handler.handle(event["body"], event["signature"])
+    # 解析並處理事件（handler 會自動驗證簽章）
+    handler.handle(body, signature)
 
 
 def get_or_create_user(line_user_id: str, profile: dict = None) -> models.ElderUser:
     """
-    取得或建立用戶
+    取得或建立用戶（使用共用函數）
 
     Args:
         line_user_id: LINE User ID
@@ -55,31 +55,10 @@ def get_or_create_user(line_user_id: str, profile: dict = None) -> models.ElderU
         ElderUser 物件
     """
     db: Session = SessionLocal()
-
-    user = db.query(models.ElderUser).filter(
-        models.ElderUser.line_user_id == line_user_id
-    ).first()
-
-    if not user:
-        user = models.ElderUser(
-            line_user_id=line_user_id,
-            display_name=profile.get("display_name") if profile else None,
-            picture_url=profile.get("picture_url") if profile else None,
-            points=settings.FREE_INITIAL_POINTS,
-        )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-
-    elif profile:
-        # 更新資料
-        user.display_name = profile.get("display_name")
-        user.picture_url = profile.get("picture_url")
-        db.commit()
-        db.refresh(user)
-
-    db.close()
-    return user
+    try:
+        return get_or_create_user_in_db(db, line_user_id, profile)
+    finally:
+        db.close()
 
 
 def handle_text_message(event: MessageEvent):
