@@ -26,10 +26,11 @@ class Settings(BaseSettings):
     # ============= Redis (Zeabur Internal) =============
     REDIS_URL: str = "redis://localhost:6379/0"
 
-    # ============= Supabase API =============
+    # ============= UDA LINK Image Hosting (Elder Gen) =============
     SUPABASE_URL: Optional[str] = None
-    SUPABASE_KEY: Optional[str] = None  # Service Role Key (for backend operations)
-    SUPABASE_STORAGE_BUCKET: str = "elder-images"
+    ELDER_GEN_EMAIL: Optional[str] = None  # Elder Gen VIP 用戶 Email
+    ELDER_GEN_PASSWORD: Optional[str] = None  # Elder Gen VIP 用戶 Password
+    R2_PUBLIC_URL: Optional[str] = None  # R2 公開 URL (可選，上傳回應已包含完整 URL)
 
     # ============= NewebPay (藍新金流) =============
     NEWEBPAY_MERCHANT_ID: Optional[str] = None
@@ -71,7 +72,8 @@ class Settings(BaseSettings):
             self.LINE_CHANNEL_SECRET,
             self.DATABASE_URL,
             self.SUPABASE_URL,
-            self.SUPABASE_KEY,
+            self.ELDER_GEN_EMAIL,
+            self.ELDER_GEN_PASSWORD,
             self.BANANA_API_KEY,
         ]
         return all(required)
